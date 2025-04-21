@@ -55,5 +55,3 @@ FinSight is a sleek, dark-themed, fully responsive personal finance web app that
 
 ---
 
-## 📁 Project Structure
-
