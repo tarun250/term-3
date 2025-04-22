@@ -36,16 +36,16 @@ export function CurrencyProvider({ children }) {
   
   // Default exchange rates as fallback
   const defaultExchangeRates = {
-    'EUR': 1.0,
-    'USD': 1.18,
-    'GBP': 0.85,
-    'JPY': 130.0,
-    'CAD': 1.48,
-    'AUD': 1.60,
-    'INR': 87.0,
-    'CNY': 7.6,
-    'BRL': 6.2,
-    'RUB': 86.0
+    'USD': 1.0,
+    'EUR': 0.85,
+    'GBP': 0.73,
+    'JPY': 110.0,
+    'CAD': 1.25,
+    'AUD': 1.35,
+    'INR': 74.5,
+    'CNY': 6.45,
+    'BRL': 5.2,
+    'RUB': 73.5
   }
   
   // Load available currencies on mount
@@ -96,8 +96,7 @@ export function CurrencyProvider({ children }) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
       
-      // Using fixer.io API with API key (always uses EUR as base)
-      const response = await fetch('http://data.fixer.io/api/latest?access_key=ce84576a8172642b33dcc31b3908fdab', {
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/7a4ea3798e46d3f0d7e7a317/latest/USD`, {
         signal: controller.signal
       }).catch(err => {
         console.log('Fetch error:', err)
@@ -115,16 +114,9 @@ export function CurrencyProvider({ children }) {
       
       const data = await response.json()
       
-      // Check if the API request was successful
-      if (!data.success) {
-        console.log('API error:', data.error)
-        setError('Failed to update exchange rates. Using default values.')
-        return
-      }
-      
-      // Ensure we actually got rates back
-      if (data && data.rates && Object.keys(data.rates).length > 0) {
-        setExchangeRates(data.rates)
+      // Check if we got valid rates
+      if (data && data.conversion_rates && Object.keys(data.conversion_rates).length > 0) {
+        setExchangeRates(data.conversion_rates)
       } else {
         setError('Invalid exchange rate data. Using default values.')
       }
@@ -137,7 +129,7 @@ export function CurrencyProvider({ children }) {
     }
   }
   
-  // Convert currency using EUR as the intermediate currency
+  // Convert currency
   function convertCurrency(amount, fromCurrency, toCurrency) {
     if (!amount || isNaN(amount) || amount <= 0) return 0
     
@@ -152,9 +144,8 @@ export function CurrencyProvider({ children }) {
       
       // Use default rates if available
       if (defaultExchangeRates[fromCurrency] && defaultExchangeRates[toCurrency]) {
-        // Convert through EUR as base
-        const amountInEUR = amount / defaultExchangeRates[fromCurrency]
-        const finalAmount = amountInEUR * defaultExchangeRates[toCurrency]
+        const amountInUSD = amount / defaultExchangeRates[fromCurrency]
+        const finalAmount = amountInUSD * defaultExchangeRates[toCurrency]
         return parseFloat(finalAmount.toFixed(2))
       }
       
@@ -167,18 +158,17 @@ export function CurrencyProvider({ children }) {
       
       // Use default rates if available
       if (defaultExchangeRates[fromCurrency] && defaultExchangeRates[toCurrency]) {
-        // Convert through EUR as base
-        const amountInEUR = amount / defaultExchangeRates[fromCurrency]
-        const finalAmount = amountInEUR * defaultExchangeRates[toCurrency]
+        const amountInUSD = amount / defaultExchangeRates[fromCurrency]
+        const finalAmount = amountInUSD * defaultExchangeRates[toCurrency]
         return parseFloat(finalAmount.toFixed(2))
       }
       
       return parseFloat(amount) // Fallback to original amount
     }
     
-    // Convert using EUR as the intermediate currency (since that's what fixer.io provides)
-    const amountInEUR = amount / exchangeRates[fromCurrency]
-    const finalAmount = amountInEUR * exchangeRates[toCurrency]
+    // Convert using USD as the intermediate currency
+    const amountInUSD = amount / exchangeRates[fromCurrency]
+    const finalAmount = amountInUSD * exchangeRates[toCurrency]
     
     return parseFloat(finalAmount.toFixed(2))
   }
